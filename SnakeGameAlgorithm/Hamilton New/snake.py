@@ -40,7 +40,7 @@ class Snake:
         self.head.width(self.speed - 3)
         self.head.origin = self.grid.center()
         self.head.goto(self.head.origin)
-        self.head.dir = 'right'
+        self.head.dir = 'up'
 
         # Snake Personal Food
         self.food = turtle.Turtle()
@@ -93,9 +93,12 @@ class Snake:
 
         # Checking if Snake got to Food
         if self.head.pos() == self.food.pos():
-            # Resetting Food Position
             self.setFoodPos()
             self.growthLength += self.gainFromFood
+
+            if self.gettingAstarPath:
+                self.getNextAstarPath = True
+            
         
         # Adding Body Segments from gain variable
         if self.growthLength > 0:
@@ -104,9 +107,6 @@ class Snake:
             self.addSegment()
             self.growthLength -= 1
             self.drawnLength += 1
-            if self.gettingAstarPath:
-                self.getNextAstarPath = True
-
         
         # Snake internal clock
         self.frame += 1
@@ -203,14 +203,10 @@ class Snake:
         del self
 
 
-
-
-
-
-    # ALGORITHMS ---------------------------------------------------------------------
+    # ALGORITHMS ----------------------------------------------------------------------------------------------
     
     def toward(self, pos):
-        x = int(pos[0]); y = int(pos[1])
+        x, y = pos
         if x == self.head.xcor() and y > self.head.ycor(): self.up()
         elif x == self.head.xcor() and y < self.head.ycor(): self.down()
         elif x > self.head.xcor() and y == self.head.ycor(): self.right()
@@ -224,35 +220,56 @@ class Snake:
             self.getNextAstarPath = False
         try: self.toward(self.astarPath[self.astarPath.index(self.head.pos()) + 1])
         except: ValueError
-        
-    def pathDistance(self, a, b):
-        if a < b:
-            return b - a - 1
-        return b - a - 1 + self.grid.size
+        return self.astarPath
+
+    def pathDistance(self, pos1, pos2):
+        if pos1 < pos2:
+            return pos2 - pos1 - 1
+        return pos2 - pos1 - 1 + self.grid.size
+    
+    def getPathFromShortcutHamilton(self):
+
+        layer = 0
+        path = [self.getNextMoveFromShortcut(self.head.pos())]
+
+        while path[-1] != self.food.pos():
+            layer += 1
+            nextNode = self.getNextMoveFromShortcut(path[-1], layer, path)
+            path.append(nextNode)
+    
+        return path
     
     def shortcutHamilton(self):
+        self.cyclePath = self.getPathFromShortcutHamilton()
+        self.toward(self.cyclePath[0])
+        return self.cyclePath
+    
+    def tempOnlyOneShortcut(self):
         self.toward(self.getNextMoveFromShortcut(self.head.pos()))
 
-    def getNextMoveFromShortcut(self, pos):
+    def getNextMoveFromShortcut(self, pos, layer = 1, pathSoFar = []):
 
-        self.getBodyPositions(); x, y = pos
+        walls = self.getBodyPositions(); x, y = pos
+        if len(walls) - layer > 0:
+            for move in range(layer):
+                walls.pop()
+        else: walls.clear()
+        walls = [pos] + pathSoFar + walls
+        
         pathNumber = self.path.index(pos)
         distanceToFood = self.pathDistance(pathNumber, self.path.index(self.food.pos()))
         if len(self.body) > 0:
-            distanceToTail = self.pathDistance(pathNumber, self.path.index(self.body[-1].pos()))
+            distanceToTail = self.pathDistance(pathNumber, self.path.index(walls[-1]))
         else: distanceToTail = float('inf')
 
         cuttingAmountAvailable = distanceToTail - self.drawnLength - self.gainFromFood
-        emptySquaresOnBoard = self.grid.size - self.drawnLength - self.gainFromFood
+        emptySquaresOnBoard = self.grid.size - self.drawnLength - self.gainFromFood - self.growthLength
         if emptySquaresOnBoard < self.grid.size * 0.5:
             cuttingAmountAvailable = 0
         elif distanceToFood < distanceToTail:
             cuttingAmountAvailable -= self.gainFromFood
             if (distanceToTail - distanceToFood) * 4 > emptySquaresOnBoard:
                 cuttingAmountAvailable -= self.gainFromFood * 2
-        
-        if self.drawnLength > self.grid.length() / 8 and self.drawnLength < self.grid.length() / 5:
-            cuttingAmountAvailable = 0
 
         cuttingAmountDesired = distanceToFood
         if cuttingAmountDesired < cuttingAmountAvailable:
@@ -300,8 +317,4 @@ class Snake:
             return below
         elif canGoRight:
             return onright
-        
-        currentIndex = self.path.index(self.head.pos())
-        if currentIndex != len(self.path) - 1:
-            return self.path[currentIndex + 1]
-        return self.path[0]
+        return above
