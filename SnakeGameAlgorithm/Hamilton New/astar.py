@@ -1,5 +1,7 @@
-import math
+import math, random
 from grid import Grid
+import turtle
+
 
 def Astar(start: tuple, end: tuple, walls: list, grid: Grid):
     Infinity = math.inf
@@ -15,6 +17,14 @@ def Astar(start: tuple, end: tuple, walls: list, grid: Grid):
     h = {str(start):0}  # g + f
 
     layer = {str(start):0}  # Movement of the snake
+
+    t = turtle.Turtle()
+    t.speed(0)
+    t.pu(); t.ht()
+    t.color('blue')
+
+    # t.clear()
+    # getAmountAvailableNodes(start, grid, walls, t)
 
     while len(open_list) > 0:
 
@@ -34,13 +44,17 @@ def Astar(start: tuple, end: tuple, walls: list, grid: Grid):
         gScore = g[str(current)] + grid.scl
         gScoreBest = False
 
-        w = walls[:]
-        if len(w) - layer[str(current)] >= 0:
-            for _ in range(layer[str(current)]):
-                w.remove(w[-1])
-        elif len(w) - layer[str(current)] < 0: w.clear()
+        movedWalls = walls[:]
+        if layer[str(current)] > 4:
+            if len(walls) - layer[str(current)] > 0:
+                for i in range(layer[str(current)] - 4):
+                    movedWalls.pop()
+            else: movedWalls.clear()
+            movedWalls = [current] + constructPath(current, parent) + movedWalls
+        # if getAmountAvailableNodes(current, grid, movedWalls, t):
+        #     continue
 
-        neighbors = getNeighbors(current, w, start, end, grid)
+        neighbors = getNeighbors(current, movedWalls, grid)
         for n in neighbors:
 
             if n not in closed_list:
@@ -64,7 +78,7 @@ def Astar(start: tuple, end: tuple, walls: list, grid: Grid):
 
     return False
 
-def getNeighbors(node, walls, start, end, grid):
+def getNeighbors(node, walls, grid):
     above = (node[0], node[1] + grid.scl)
     below = (node[0], node[1] - grid.scl)
     onright = (node[0] + grid.scl, node[1])
@@ -100,3 +114,51 @@ def heuristic(pos1, pos2):
     dist = abs(math.sqrt((x2 - x1)**2 + (y2 - y1)**2))  # Euclidian Distance
 
     return dist
+
+
+
+def getAmountAvailableNodes(pos: tuple, grid: Grid, walls: list, t):
+
+    t.clear()
+
+    totalNeighbors = [pos]
+    checkedNodes = []
+
+    nodesChecked = 0
+
+    while not allValues(checkedNodes, totalNeighbors):
+        
+        current = random.choice(totalNeighbors)
+        while current in checkedNodes:
+            current = random.choice(totalNeighbors)
+
+        checkedNodes.append(current)
+
+        neighbors = getNeighbors(current, walls, grid)
+        for neighbor in neighbors:
+            if neighbor not in checkedNodes:
+                if neighbor not in totalNeighbors:
+                    totalNeighbors.append(neighbor)
+                    nodesChecked += 1
+                    
+                    t.goto(neighbor); t.dot(10)
+                    # t.write('')  # Hacky Updating Screen
+        
+        if len(totalNeighbors) - 1 >= 0.75 * grid.length():
+            t.write('')
+            print("MORE THAN 75")
+            t.clear()
+            return True
+
+    t.write('')
+    print("NOT MORE")
+    return len(totalNeighbors) - 1
+
+
+def allValues(list1: list, list2: list):
+    amountSame = 0
+    for val in list1:
+        if val in list2:
+            amountSame += 1
+    if amountSame == len(list2): return True
+    return False
