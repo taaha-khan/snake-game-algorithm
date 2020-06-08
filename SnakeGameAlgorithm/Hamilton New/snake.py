@@ -3,8 +3,6 @@ import turtle, random
 from grid import Grid
 from astar import Astar
 
-import time
-
 # Main Snake Object
 class Snake:
 
@@ -168,6 +166,7 @@ class Snake:
         if self.head.pos() in self.body_positions:
             self.die()
 
+    # Checking Collision with position in predicted walls
     def checkCollision(self, pos, walls):
         if pos in walls or pos not in self.grid.cells:
             return True
@@ -185,8 +184,8 @@ class Snake:
     def run(self):
         # Only Move if the game is not won or lost
         if not self.won and not self.dead:
-            self.move() # Moving Body Segments
-            self.update()  # Moving Head
+            self.move()   # Moving Body Segments
+            self.update()   # Moving Head
             self.checkCollisionWithBody()  # Checking if Dead
 
     # Hiding Snake
@@ -202,7 +201,7 @@ class Snake:
         self.head.st(); self.food.st()
         for seg in self.body: seg.st()
     
-    # Ending Game
+    # Destroying Snake
     def die(self):
         self.dead = True
         self.hide()
@@ -211,6 +210,7 @@ class Snake:
 
     # ALGORITHMS ----------------------------------------------------------------------------------------------
     
+    # Moving to a node
     def toward(self, pos):
         x, y = pos
         if x == self.head.xcor() and y > self.head.ycor(): self.up()
@@ -218,6 +218,7 @@ class Snake:
         elif x > self.head.xcor() and y == self.head.ycor(): self.right()
         elif x < self.head.xcor() and y == self.head.ycor(): self.left()
 
+    # A* Compiling Algorithm
     def getPathFromAstar(self):
         self.gettingAstarPath = True
         if self.astarPath == None or self.getNextAstarPath:
@@ -227,11 +228,13 @@ class Snake:
         except: ValueError
         return self.astarPath
 
+    # Path Distance from nodes
     def pathDistance(self, pos1, pos2):
         if pos1 < pos2:
             return pos2 - pos1 - 1
         return pos2 - pos1 - 1 + self.grid.size
     
+    # Calculating Path From Head to food
     def getPathFromShortcutHamilton(self):
 
         layer = 0
@@ -244,54 +247,63 @@ class Snake:
     
         return path
     
+    # Main Movement Function for Shortcut Algorithm
     def shortcutHamilton(self):
         self.cyclePath = self.getPathFromShortcutHamilton()
         self.toward(self.cyclePath[0])
         return self.cyclePath
     
+    # Only Calculating One Block Ahead
     def tempOnlyOneShortcut(self):
         self.toward(self.getNextMoveFromShortcut(self.head.pos()))
 
     def getNextMoveFromShortcut(self, pos, layer = 1, pathSoFar = []):
 
+        # Predicting Body Movement with shortcut
         walls = self.getBodyPositions(); x, y = pos
-        if len(walls) - layer - self.growthLength > 0:
-            for move in range(layer - self.growthLength):
-                walls.pop()
+        if len(walls) - layer > 0:
+            for move in range(layer):
+                walls.remove(walls[-1])
         else: walls.clear()
         walls = [pos] + pathSoFar + walls
 
+        # Getting Main Distances
         pathNumber = self.path.index(pos)
         distanceToFood = self.pathDistance(pathNumber, self.path.index(self.food.pos()))
         if len(self.body) > 0:
             distanceToTail = self.pathDistance(pathNumber, self.path.index(walls[-1]))
         else: distanceToTail = float('inf')
 
+        # Calculating Available Cutting Amounts
         cuttingAmountAvailable = distanceToTail - self.drawnLength - self.gainFromFood - self.growthLength
-        emptySquaresOnBoard = self.grid.size - self.drawnLength - self.growthLength
+        emptySquaresOnBoard = self.grid.size - self.drawnLength - self.growthLength - 1
         if self.drawnLength >= self.grid.size * 0.5:
-            cuttingAmountAvailable = 0
+            cuttingAmountAvailable = 0  # Disabling Shortcuts
         elif distanceToFood < distanceToTail:
-            cuttingAmountAvailable -= self.gainFromFood
+            cuttingAmountAvailable -= (self.gainFromFood + self.growthLength)
             if (distanceToTail - distanceToFood) * 4 > emptySquaresOnBoard:
-                cuttingAmountAvailable -= self.gainFromFood * 2
+                cuttingAmountAvailable -= (self.gainFromFood + self.growthLength)
 
+        # Normalizing Cutting Amounts
         cuttingAmountDesired = distanceToFood
         if cuttingAmountDesired < cuttingAmountAvailable:
             cuttingAmountAvailable = cuttingAmountDesired
         if cuttingAmountAvailable < 0:
             cuttingAmountAvailable = 0
         
+        # Directions
         above = (x, y + self.speed)
         below = (x, y - self.speed)
         onleft = (x - self.speed, y)
         onright = (x + self.speed, y)
-        
+
+        # Checking if Direction is safe
         canGoRight = not self.checkCollision(onright, walls)
         canGoLeft = not self.checkCollision(onleft, walls)
         canGoUp = not self.checkCollision(above, walls)
         canGoDown = not self.checkCollision(below, walls)
 
+        # Safety Lookup Table
         canGo = {
             above: canGoUp,
             below: canGoDown,
@@ -299,11 +311,14 @@ class Snake:
             onleft: canGoLeft
         }
 
+        # Main Comparison Items
         bestDir = ()
         bestDist = -1
 
+        # Possible Directions
         goList = [above, below, onleft, onright]
 
+        # Looking for optimal node to travel to
         for node in goList:
             if canGo[node]:
                 dist = self.pathDistance(pathNumber, self.path.index(node))
@@ -311,9 +326,13 @@ class Snake:
                     bestDir = node
                     bestDist = dist
 
+        # Return Best Direction
         if bestDist >= 0:
             return bestDir
         
+        # Should not reach here -------------------
+        
+        # Returning viable node
         if canGoUp:
             return above
         elif canGoLeft:
