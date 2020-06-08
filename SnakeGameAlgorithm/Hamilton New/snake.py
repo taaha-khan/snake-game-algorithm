@@ -3,11 +3,13 @@ import turtle, random
 from grid import Grid
 from astar import Astar
 
+import time
+
 # Main Snake Object
 class Snake:
 
     # Initializing Snake
-    def __init__(self, grid: Grid, path: list):
+    def __init__(self, grid: Grid):
 
         # Variables
         self.body = []
@@ -15,8 +17,11 @@ class Snake:
         self.dead = False
         self.won = False
         self.speed = grid.scl
+
+        # Environment Variables
         self.grid = grid
-        self.path = path
+        self.path = grid.hCycle
+        self.cyclePath = None
 
         # A* Variables
         self.getNextAstarPath = False
@@ -27,6 +32,7 @@ class Snake:
         self.frame = 0
         self.gainFromFood = 4
 
+        # Growth Measurements
         self.growthLength = self.gainFromFood
         self.drawnLength = 0
 
@@ -37,12 +43,12 @@ class Snake:
         self.head.shape('scaled-square')
         self.color = '#009600'
         self.head.color(self.color)
-        self.head.width(self.speed - 3)
+        self.head.width(self.speed - (self.grid.bord*2) + 1)
         self.head.origin = self.grid.center()
         self.head.goto(self.head.origin)
         self.head.dir = 'up'
 
-        # Snake Personal Food
+        # Snake Food
         self.food = turtle.Turtle()
         self.food.pu()
         self.food.shape('scaled-square')
@@ -148,7 +154,7 @@ class Snake:
         # Generating new segment
         new_segment = turtle.Turtle()
         new_segment.speed(0)
-        new_segment.width(self.speed - 3)
+        new_segment.width(self.speed - (self.grid.bord*2) + 1)
         new_segment.ht()
         new_segment.shape('scaled-square')
         new_segment.color(self.color)
@@ -162,8 +168,8 @@ class Snake:
         if self.head.pos() in self.body_positions:
             self.die()
 
-    def checkCollision(self, pos):
-        if pos in self.body_positions or pos not in self.grid.cells:
+    def checkCollision(self, pos, walls):
+        if pos in walls or pos not in self.grid.cells:
             return True
         return False
     
@@ -212,7 +218,6 @@ class Snake:
         elif x > self.head.xcor() and y == self.head.ycor(): self.right()
         elif x < self.head.xcor() and y == self.head.ycor(): self.left()
 
-
     def getPathFromAstar(self):
         self.gettingAstarPath = True
         if self.astarPath == None or self.getNextAstarPath:
@@ -250,21 +255,21 @@ class Snake:
     def getNextMoveFromShortcut(self, pos, layer = 1, pathSoFar = []):
 
         walls = self.getBodyPositions(); x, y = pos
-        if len(walls) - layer > 0:
-            for move in range(layer):
+        if len(walls) - layer - self.growthLength > 0:
+            for move in range(layer - self.growthLength):
                 walls.pop()
         else: walls.clear()
         walls = [pos] + pathSoFar + walls
-        
+
         pathNumber = self.path.index(pos)
         distanceToFood = self.pathDistance(pathNumber, self.path.index(self.food.pos()))
         if len(self.body) > 0:
             distanceToTail = self.pathDistance(pathNumber, self.path.index(walls[-1]))
         else: distanceToTail = float('inf')
 
-        cuttingAmountAvailable = distanceToTail - self.drawnLength - self.gainFromFood
-        emptySquaresOnBoard = self.grid.size - self.drawnLength - self.gainFromFood - self.growthLength
-        if emptySquaresOnBoard < self.grid.size * 0.5:
+        cuttingAmountAvailable = distanceToTail - self.drawnLength - self.gainFromFood - self.growthLength
+        emptySquaresOnBoard = self.grid.size - self.drawnLength - self.growthLength
+        if self.drawnLength >= self.grid.size * 0.5:
             cuttingAmountAvailable = 0
         elif distanceToFood < distanceToTail:
             cuttingAmountAvailable -= self.gainFromFood
@@ -282,10 +287,10 @@ class Snake:
         onleft = (x - self.speed, y)
         onright = (x + self.speed, y)
         
-        canGoRight = not self.checkCollision(onright)
-        canGoLeft = not self.checkCollision(onleft)
-        canGoUp = not self.checkCollision(above)
-        canGoDown = not self.checkCollision(below)
+        canGoRight = not self.checkCollision(onright, walls)
+        canGoLeft = not self.checkCollision(onleft, walls)
+        canGoUp = not self.checkCollision(above, walls)
+        canGoDown = not self.checkCollision(below, walls)
 
         canGo = {
             above: canGoUp,
