@@ -1,6 +1,9 @@
 import random, turtle
 
+# Grid Object
 class Grid:
+
+    # Main Variables for Grid
     def __init__(self, cols: int, rows: int, scl: int):
         self.cols = cols
         self.rows = rows
@@ -11,6 +14,7 @@ class Grid:
         self.scl = scl
         self.cellPositions = {}
     
+    # Drawing Grid Border
     def drawBorder(self, color: str):
         self.pen = turtle.Turtle()
         self.pen.pu(); self.pen.ht()
@@ -23,6 +27,7 @@ class Grid:
         self.pen.goto(-self.width / 2 - 2, -self.height / 2 - 2)
         self.pen.pu()
     
+    # Showing grid cells
     def show(self, color: str):
         if len(self.cells) == 0:
             self.createGrid()
@@ -33,32 +38,36 @@ class Grid:
             self.pen.goto(cell)
             self.pen.dot(10)
 
+    # Generating grid from top right to bottom left
     def createGrid(self):
         self.cells = []
         for y in range(self.rows):
             for x in range(self.cols):
                 sx = (x - self.cols / 2) * self.scl + (self.scl / 2)
-                sy = (y - self.rows / 2) * self.scl + (self.scl / 2)
+                sy = -((y - self.rows / 2) * self.scl + (self.scl / 2))
                 position = (sx, sy)
                 self.cells.append(position)
                 self.cellPositions[str(position)] = self.cells[-1]
         return self.cells
     
+    # Getting Center node from grid
     def center(self):
         if len(self.cells) == 0:
             self.createGrid()
         index = len(self.cells) // 2
-        pos = self.cells[index + (self.cols // 2)]
-        return pos
+        return self.cells[index + (self.cols // 2)]
 
+    # Getting random position in grid
     def randomPos(self):
         if len(self.cells) == 0:
             self.createGrid()
         return random.choice(self.cells)
     
+    # Getting length of grid
     def length(self):
         return len(self.cells)
 
+# Mapping values from values
 def Map(value: float, leftMin: float, leftMax: float, rightMin: float, rightMax: float):
     leftSpan = leftMax - leftMin
     rightSpan = rightMax - rightMin
