@@ -31,24 +31,31 @@ class HamiltonianCycle:
     # MST Prim
     def generateSpanningTree(self):
 
+        # Clearing Main Prim
         self.forest = []
         self.walls = []
         self.edges = []
         
+        # Initializing Start Positions
         position = self.coordinates.randomPos()
         self.forest.append(position)
 
+        # Continuing until all nodes are in Prim
         while len(self.forest) < self.coordinates.length():
 
+            # Getting a random new branch of a Prim Tree
             position, adjacent = self.getRandomPrimNode()
             direction = random.choice(adjacent)
 
+            # Getting Edge between node and connection
             edge = Edge(position, direction, self.scl)
             edge.getWallsBetweenNodes()
 
+            # Adding Walls to hc walls
             for wall in edge.walls:
                 self.walls.append(wall)
 
+            # Adding branches to Prim
             self.forest.append(direction)
             self.edges.append(edge)
     
@@ -56,15 +63,18 @@ class HamiltonianCycle:
     # Traversing MST Prim Maze
     def traversePath(self):
 
+        # Generating New Objects
         self.cycle = []
         runner = Runner(self.grid.randomPos(), self.walls, self.grid.cells, self.scl)
-        
+
+        # Directions
+        up = [0, 1]; down = [0, -1]
+        right = [1, 0]; left = [-1, 0]
+
+        directions = [left, up, right, down]
+
+        # Main Traverse Loop
         while len(runner.traveled) < self.grid.length():
-
-            up = [0, 1]; down = [0, -1]
-            right = [1, 0]; left = [-1, 0]
-
-            directions = [left, up, right, down]
 
             current = runner.strDirections.index(runner.dir)  # Straight
             nextOne = int(current) + 1  # Going Left
@@ -72,6 +82,7 @@ class HamiltonianCycle:
                 nextOne = 0  # Wrapping Around
             prev = int(current) - 1  # Going Right
             
+            # Traveling through the maze
             if runner.canGo(directions[prev]):
                 runner.directions[prev]()  # Left
             elif runner.canGo(directions[current]):
@@ -79,15 +90,12 @@ class HamiltonianCycle:
             elif runner.canGo(directions[nextOne]):
                 runner.directions[nextOne]()  # Right
 
+            # Appending Maze Runs
             runner.traveled.append(runner.pos())
             self.cycle.append(runner.pos())
 
     # Compiling Hamiltonian Generation Algorithms
     def generateHamiltonianCycle(self):
-        
-        # Checking if an hCycle exists
-        if self.grid.cols % 2 != 0 or self.grid.rows % 2 != 0:
-            return None
         
         # Generating Hamiltonian Cycle
         self.generateSpanningTree()
@@ -112,6 +120,8 @@ class HamiltonianCycle:
     
     # Showing HCycle
     def show(self, animating = False, cycle = True, prim = True):
+
+        # Main Drawing Pen
         self.pen = turtle.Turtle()
         self.pen.pu(); self.pen.ht()
         self.pen.goto(self.cycle[0])
@@ -119,10 +129,12 @@ class HamiltonianCycle:
         self.pen.width(2)
         self.pen.pd()
 
+        # Showing Prim Tree
         if prim:
             for edge in self.edges:
                 edge.show(animating)
         
+        # Showing HCycle
         if cycle:
             index = 0
             for pos in self.cycle:
@@ -142,29 +154,38 @@ class HamiltonianCycle:
     # MST Prim Helper Function
     def getRandomPrimNode(self):
 
+        # Shuffling Forest for node
         random.shuffle(self.forest)
 
+        # Finding node from forest
         for pos in self.forest:
-
-            adjacent = []
+            
+            # Directions from node
             above = (pos[0], pos[1] + self.coordinates.scl)
             below = (pos[0], pos[1] - self.coordinates.scl)
             onright = (pos[0] + self.coordinates.scl, pos[1])
             onleft = (pos[0] - self.coordinates.scl, pos[1])
 
+            # List Directions
             neighbors = [above, below, onright, onleft]
+            adjacent = []
 
+            # Adding neighbors to node
             for val in neighbors:
                 if val not in self.forest:
                     if val in self.coordinates.cells: 
                         adjacent.append(val)
             
+            # Returning node with neighbor
             if len(adjacent) > 0:
                 return pos, adjacent       
 
 # Edge Class for MST Prim
 class Edge:
+
     def __init__(self, node1: tuple, node2: tuple, scl: int):
+
+        # Node Connection Variables
         self.node1 = node1
         self.node2 = node2
         self.scl = scl
@@ -175,7 +196,7 @@ class Edge:
         self.directionToNode1 = [0, 0]
         self.directionToNode2 = [0, 0]
 
-
+    # Showing connection node
     def show(self, animating = False):
         self.pen = turtle.Turtle()
         self.pen.pu(); self.pen.ht()
@@ -190,18 +211,22 @@ class Edge:
             if animating:
                 self.pen.write('')
     
+    # Clearing Nodes
     def clearPen(self):
         if self.pen: self.pen.clear()
     
     # Getting Maze walls for Prim
     def getWallsBetweenNodes(self):
-
+        
+        # Getting direction between nodes
         xoff, yoff = self.getDirectionBetweenNodes()
         differences = [self.sclh, self.sclm]
 
+        # Adding walls to nodes
         for wall in range(len(differences)):
             pos = list(self.node1)
 
+            # Adding wall differences to nodes
             pos[0] += xoff * differences[wall]
             pos[1] += yoff * differences[wall]
 
@@ -212,12 +237,15 @@ class Edge:
     # MST Edge Direction    
     def getDirectionBetweenNodes(self):
 
+        # Getting offsets
         xoff = self.node2[0] - self.node1[0]
         yoff = self.node2[1] - self.node1[1]
-
+        
+        # Normalizing offsets to [1, 0, -1]
         if xoff != 0: xoff /= abs(xoff)
         elif yoff != 0: yoff /= abs(yoff)
 
+        # Getting directions
         self.directionToNode2 = [xoff, yoff]
         self.directionToNode1 = [yoff, xoff]
         return self.directionToNode2
@@ -244,13 +272,15 @@ class Runner:
         self.maze = maze
         self.traveled = []
     
-
+    # Getting tuple position
     def pos(self):
         return (self.x, self.y)
 
+    # Checking if directional node is not past a wall
     def canGo(self, direction: list):
         scaled = direction[:]
         direction[0] *= self.scl; direction[1] *= self.scl
+        # Checking sections for walls
         if (self.x + direction[0], self.y + direction[1]) in self.grid:
             if (self.x + direction[0], self.y + direction[1]) not in self.traveled:
                 if (self.x + scaled[0] * self.sclh, self.y + scaled[1] * self.sclh) not in self.maze:
@@ -271,11 +301,8 @@ class Runner:
         self.x -= self.scl
         self.dir = 'left'
 
-
+# Euclidean distances
 def dist(pos1: tuple or list, pos2: tuple or list):
     x1, y1 = pos1; x2, y2 = pos2
     dist = abs(math.sqrt((x2 - x1)**2 + (y2 - y1)**2))
     return dist
-
-
-    
