@@ -67,14 +67,14 @@ class HamiltonianCycle:
         self.cycle = []
         runner = Runner(self.grid.randomPos(), self.walls, self.grid.cells, self.scl)
 
-        # Directions
-        up = [0, 1]; down = [0, -1]
-        right = [1, 0]; left = [-1, 0]
-
-        directions = [left, up, right, down]
-
         # Main Traverse Loop
         while len(runner.traveled) < self.grid.length():
+
+            # Directions
+            up = [0, 1]; down = [0, -1]
+            right = [1, 0]; left = [-1, 0]
+
+            directions = [left, up, right, down]
 
             current = runner.strDirections.index(runner.dir)  # Straight
             nextOne = int(current) + 1  # Going Left
@@ -245,6 +245,8 @@ class Edge:
         if xoff != 0: xoff /= abs(xoff)
         elif yoff != 0: yoff /= abs(yoff)
 
+        print(xoff, yoff)
+
         # Getting directions
         self.directionToNode2 = [xoff, yoff]
         self.directionToNode1 = [yoff, xoff]
@@ -280,7 +282,6 @@ class Runner:
     def canGo(self, direction: list):
         scaled = direction[:]
         direction[0] *= self.scl; direction[1] *= self.scl
-        # Checking sections for walls
         if (self.x + direction[0], self.y + direction[1]) in self.grid:
             if (self.x + direction[0], self.y + direction[1]) not in self.traveled:
                 if (self.x + scaled[0] * self.sclh, self.y + scaled[1] * self.sclh) not in self.maze:
