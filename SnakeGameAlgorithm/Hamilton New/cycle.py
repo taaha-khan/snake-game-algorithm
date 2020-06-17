@@ -70,11 +70,8 @@ class HamiltonianCycle:
         # Main Traverse Loop
         while len(runner.traveled) < self.grid.length():
 
-            # Directions
-            up = [0, 1]; down = [0, -1]
-            right = [1, 0]; left = [-1, 0]
-
-            directions = [left, up, right, down]
+            # Directions - LEFT  -   UP  -  RIGHT - DOWN
+            directions = [[-1, 0], [0, 1], [1, 0], [0, -1]]
 
             current = runner.strDirections.index(runner.dir)  # Straight
             nextOne = int(current) + 1  # Going Left
@@ -104,7 +101,7 @@ class HamiltonianCycle:
         # Making sure that hCycle has all nodes
         while True:
             complete = True
-            if dist(self.cycle[1], self.cycle[-1]) > self.scl * 2:
+            if dist(self.cycle[1], self.cycle[-1]) > self.scl * 1.5:
                 complete = False
             else:
                 for cell in self.grid.cells:
@@ -138,7 +135,7 @@ class HamiltonianCycle:
         if cycle:
             index = 0
             for pos in self.cycle:
-                self.pen.color('red')
+                self.pen.color('grey')
                 self.pen.goto(pos)
                 if animating:
                     self.pen.color('white')
@@ -244,8 +241,6 @@ class Edge:
         # Normalizing offsets to [1, 0, -1]
         if xoff != 0: xoff /= abs(xoff)
         elif yoff != 0: yoff /= abs(yoff)
-
-        print(xoff, yoff)
 
         # Getting directions
         self.directionToNode2 = [xoff, yoff]
