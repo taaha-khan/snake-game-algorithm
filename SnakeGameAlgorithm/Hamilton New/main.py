@@ -5,12 +5,13 @@ import random, time
 # File Imports
 from grid import Grid
 from snake import Snake
-from HamiltonianCycle import HamiltonianCycle
+from cycle import HamiltonianCycle
 
 # Scaling Sizes
 scl  = 40   # Scale
 rows = 20   # Height
 cols = 30   # Width
+bord = 5    # Fold
 
 # Screen Sizes
 width = cols * scl
@@ -20,7 +21,8 @@ sclh = scl / 2
 # Main Variables
 speed = 1; run = 0
 showingPath = False
-path = False
+play = False
+path = []
 start = time.time()
 
 # Main Screen Setup
@@ -31,7 +33,7 @@ wn.bgcolor('#141414')
 wn.tracer(0)
 
 # Registering Scaled Square Shape
-wn.register_shape('scaled-square', ((-sclh+2, sclh-2), (sclh-2, sclh-2), (sclh-2, -sclh+2), (-sclh+2, -sclh+2)))
+wn.register_shape('scaled-square', ((-sclh+bord, sclh-bord), (sclh-bord, sclh-bord), (sclh-bord, -sclh+bord), (-sclh+bord, -sclh+bord)))
 
 # Generating Arena Grid Map
 grid = Grid(cols, rows, scl)
@@ -41,9 +43,12 @@ grid.drawBorder('red')
 # Generating Hamiltonian Cycle
 hc = HamiltonianCycle(grid)
 hCycle = hc.generateHamiltonianCycle()
+showingHCycle = False
+grid.hCycle = hCycle
+grid.bord = bord
 
 # Creating Main Snake
-snake = Snake(grid, hCycle)
+snake = Snake(grid)
 
 # Speed Functions
 def speedUp():
@@ -59,14 +64,35 @@ def showPath():
     showingPath = not showingPath
     show.clear()
 
+# Pause and Play
+def pausePlay():
+    global play
+    play = not play
+
+# Showing and Hiding HCycle
+def showHCycle():
+    global showingHCycle
+    showingHCycle = not showingHCycle
+    if showingHCycle:
+        hc.show(False, True, False)
+    else: hc.clear()
+
 # Manual Gameplay Keybindings
 def manualGameplay():
+    clearKeybindings()
     wn.listen()
     wn.onkey(snake.up, 'Up')
     wn.onkey(snake.down, 'Down')
     wn.onkey(snake.left, 'Left')
     wn.onkey(snake.right, 'Right')
     time.sleep(0.05)
+
+# Clearing multiple movements
+def clearKeybindings():
+    wn.onkey(None, 'Up')
+    wn.onkey(None, 'Down')
+    wn.onkey(None, 'Left')
+    wn.onkey(None, 'Right')
 
 # Framerate Calculator
 def frameRate():
@@ -82,11 +108,14 @@ wn.listen()
 wn.onkeypress(speedUp, 'space')
 wn.onkeyrelease(slowDown, 'space')
 wn.onkey(showPath, 'p')
+wn.onkey(pausePlay, 's')
+wn.onkey(showHCycle, 'h')
+wn.onkey(frameRate, 'f')
 
 # Showing predicted path pen
 show = turtle.Turtle()
 show.pu(); show.ht()
-show.color('blue'); show.width(3)
+show.color('blue'); show.width(4)
 
 # Main Run Loop
 while True:
@@ -94,36 +123,40 @@ while True:
     # Updating Screen
     wn.update()
 
+    # Showing predicted path
+    if showingPath and path:
+        show.clear()
+        show.pu(); show.goto(path[0]); show.pd()
+        for node in path:
+            show.goto(node)
+    
+    # Pausing and Playing
+    if play: continue
+
     # Speed loop
-    for play in range(speed):
+    for frame in range(speed):
 
         # Frame Count
         run += 1
 
-        # Algorithms
-        # path = snake.getPathFromAstar()
-        path = snake.shortcutHamilton()
+        # Algorithms ------------------------
 
-        # Showing predicted path
-        if showingPath and path:
-            show.clear()
-            show.pu(); show.goto(path[0]); show.pd()
-            for node in path:
-                show.goto(node)
+        # path = snake.getPathFromAstar()
+        # path = snake.pathShortcutHamilton()
+        path = snake.shortcutHamilton()
 
         # Updating Snake
         snake.run()
 
         # Manual Game Ending
         if snake.dead:
-            snake = Snake(grid, path)
+            snake = Snake(grid)
 
-        # Updating Score in Title
+        # Updating Score in Title                     
         wn.title(f'Snake Game Algorithm  -  Score: {snake.drawnLength}')
 
         # Runtime Functions
         # manualGameplay()
-        # frameRate()
 
 # Ending Program
 wn.mainloop()
