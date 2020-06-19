@@ -1,3 +1,17 @@
+"""
+ __ __ __ __ __ __ __ __ __ __ __ __ __ __ __
+|                                            |
+|   © Taaha Khan 2020                        |
+|   All Rights Reserved                      |
+|   "Snake Game Algorithm" - V 7.1.0         |
+|   This is a Snake Game playing algorithm   |
+|   that generates a Hamiltonian Cycle       |
+|   through a grid and uses shortcuts        |
+|   to efficiently find a path to the food   |
+|__ __ __ __ __ __ __ __ __ __ __ __ __ __ __|
+
+"""
+
 # Importing Important Imports
 import turtle, math
 import random, time
@@ -21,8 +35,8 @@ sclh = scl / 2
 # Main Variables
 speed = 1; run = 0
 showingPath = False
-play = False
-path = []
+showingHCycle = False
+play = False; path = []
 start = time.time()
 
 # Main Screen Setup
@@ -43,7 +57,6 @@ grid.drawBorder('red')
 # Generating Hamiltonian Cycle
 hc = HamiltonianCycle(grid)
 hCycle = hc.generateHamiltonianCycle()
-showingHCycle = False
 grid.hCycle = hCycle
 grid.bord = bord
 
