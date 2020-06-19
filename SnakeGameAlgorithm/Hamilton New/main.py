@@ -21,155 +21,195 @@ from grid import Grid
 from snake import Snake
 from cycle import HamiltonianCycle
 
-# Scaling Sizes
-scl  = 40   # Scale
-rows = 20   # Height
-cols = 30   # Width
-bord = 5    # Fold
+# Main Run Class
+class Game:
 
-# Screen Sizes
-width = cols * scl
-height = rows * scl
-sclh = scl / 2
+    # Initializing Variables
+    def __init__(self):
 
-# Main Variables
-speed = 1; run = 0
-showingPath = False
-showingHCycle = False
-play = False; path = []
-start = time.time()
+        # Screen Sizes
+        self.scl = 40   # Scale
+        self.rows = 20  # Width
+        self.cols = 30  # Height
+        self.bord = 5   # Fold
 
-# Main Screen Setup
-wn = turtle.Screen()
-wn.setup(width + 50, height + 50)
-wn.title('Snake Game Algorithm')
-wn.bgcolor('#141414')
-wn.tracer(0)
+        # Screen Sizes
+        self.width = self.cols * self.scl
+        self.height = self.rows * self.scl 
+        self.sclh = self.scl / 2
 
-# Registering Scaled Square Shape
-wn.register_shape('scaled-square', ((-sclh+bord, sclh-bord), (sclh-bord, sclh-bord), (sclh-bord, -sclh+bord), (-sclh+bord, -sclh+bord)))
+        # Initializing Start Variables
+        self.playSpeed = 1
+        self.frame = 0
+        self.runFrame = 0
+        self.startTime = time.time()
 
-# Generating Arena Grid Map
-grid = Grid(cols, rows, scl)
-cells = grid.createGrid()
-grid.drawBorder('red')
+        # Showing Screen Variables
+        self.gettingFrameRate = False
+        self.showingPath = False
+        self.showingHCycle = False
+        self.play = False
 
-# Generating Hamiltonian Cycle
-hc = HamiltonianCycle(grid)
-hCycle = hc.generateHamiltonianCycle()
-grid.hCycle = hCycle
-grid.bord = bord
+        # Calculated Algorithm Path
+        self.path = []
 
-# Creating Main Snake
-snake = Snake(grid)
+        # Main Screen Setup
+        self.window = turtle.Screen()
+        self.window.setup(self.width + 50, self.height + 50)
+        self.window.title("Snake Game Algorithme")
+        self.window.bgcolor('#141414')
+        self.window.tracer(0)
 
-# Speed Functions
-def speedUp():
-    global speed
-    speed = 10
-def slowDown():
-    global speed
-    speed = 1
+        # Registering Scaled Square Shape
+        self.window.register_shape('scaled-square', (
+            (-self.sclh + self.bord, self.sclh-self.bord), 
+            (self.sclh - self.bord, self.sclh - self.bord), 
+            (self.sclh - self.bord, -self.sclh + self.bord), 
+            (-self.sclh + self.bord, -self.sclh + self.bord))
+        )
 
-# Showing Predicted Path Function
-def showPath():
-    global showingPath
-    showingPath = not showingPath
-    show.clear()
+        # Generating Arena Grid Map
+        self.grid = Grid(self.cols, self.rows, self.scl)
+        self.cells = self.grid.createGrid()
+        self.grid.drawBorder('red')
 
-# Pause and Play
-def pausePlay():
-    global play
-    play = not play
+        # Generating Hamiltonian Cycle
+        self.hc = HamiltonianCycle(self.grid)
+        self.hCycle = self.hc.generateHamiltonianCycle()
+        self.grid.hCycle = self.hCycle
+        self.grid.bord = self.bord
 
-# Showing and Hiding HCycle
-def showHCycle():
-    global showingHCycle
-    showingHCycle = not showingHCycle
-    if showingHCycle:
-        hc.show(False, True, False)
-    else: hc.clear()
+        # Creating Main Snake Object
+        self.snake = Snake(self.grid)
 
-# Manual Gameplay Keybindings
-def manualGameplay():
-    clearKeybindings()
-    wn.listen()
-    wn.onkey(snake.up, 'Up')
-    wn.onkey(snake.down, 'Down')
-    wn.onkey(snake.left, 'Left')
-    wn.onkey(snake.right, 'Right')
-    time.sleep(0.05)
+        # Showing Algorithm Path Pen
+        self.show = turtle.Turtle()
+        self.show.pu(); self.show.ht()
+        self.show.color('blue')
+        self.show.width(4)
 
-# Clearing multiple movements
-def clearKeybindings():
-    wn.onkey(None, 'Up')
-    wn.onkey(None, 'Down')
-    wn.onkey(None, 'Left')
-    wn.onkey(None, 'Right')
-
-# Framerate Calculator
-def frameRate():
-    global run, start
-    end = time.time()
-    if end - start >= 1:
-        print(f"FPS: {run}")
-        run = 0
-        start = time.time()
- 
-# Main Keybindings
-wn.listen()
-wn.onkeypress(speedUp, 'space')
-wn.onkeyrelease(slowDown, 'space')
-wn.onkey(showPath, 'p')
-wn.onkey(pausePlay, 's')
-wn.onkey(showHCycle, 'h')
-wn.onkey(frameRate, 'f')
-
-# Showing predicted path pen
-show = turtle.Turtle()
-show.pu(); show.ht()
-show.color('blue'); show.width(4)
-
-# Main Run Loop
-while True:
-
-    # Updating Screen
-    wn.update()
-
-    # Showing predicted path
-    if showingPath and path:
-        show.clear()
-        show.pu(); show.goto(path[0]); show.pd()
-        for node in path:
-            show.goto(node)
+    # Speeding Up Run
+    def speedUp(self):
+        self.playSpeed = 10
+    
+    # Slowing Down Run
+    def slowDown(self):
+        self.playSpeed = 1
+    
+    # Showing Predicted Path
+    def showPath(self):
+        self.showingPath = not self.showingPath
+        self.show.clear()
     
     # Pausing and Playing
-    if play: continue
+    def pausePlay(self):
+        self.play = not self.play
 
-    # Speed loop
-    for frame in range(speed):
+    # Showing and Hiding HamiltonianCycle
+    def showHCycle(self):
+        self.showingHCycle = not self.showingHCycle
+        if self.showingHCycle:
+            self.hc.show(False, True, False) 
+        else: self.hc.clear()
+    
+    # Manual Gameplay Keybindings
+    def manualGameplay(self):
+        self.clearManualMovement()
+        self.window.listen()
+        self.window.onkey(self.snake.up, "Up")
+        self.window.onkey(self.snake.down, "Down")
+        self.window.onkey(self.snake.left, "Left")
+        self.window.onkey(self.snake.right, "Right")
+        time.sleep(0.05)
 
-        # Frame Count
-        run += 1
+    # Clearing mutiple movements per Frame
+    def clearManualMovement(self):
+        self.window.onkey(None, "Up")
+        self.window.onkey(None, "Down")
+        self.window.onkey(None, "Left")
+        self.window.onkey(None, "Right")
+    
+    # Getting Frame Rate
+    def frameRate(self):
+        self.gettingFrameRate = not self.gettingFrameRate
+    
+    # Main Simulation Keybindings
+    def setMainKeybindings(self):
+        self.window.listen()
+        self.window.onkeypress(self.speedUp, 'space')
+        self.window.onkeyrelease(self.slowDown, 'space')
+        self.window.onkey(self.showPath, 'p')
+        self.window.onkey(self.pausePlay, 's')
+        self.window.onkey(self.frameRate, 'f')
+        self.window.onkey(self.showHCycle, 'h')
 
-        # Algorithms ------------------------
+    # Main Compiling Run Function
+    def run(self):
 
-        # path = snake.getPathFromAstar()
-        # path = snake.pathShortcutHamilton()
-        path = snake.shortcutHamilton()
+        # Setting the Keybindings
+        self.setMainKeybindings()
 
-        # Updating Snake
-        snake.run()
+        # Main Run Loop
+        while True:
 
-        # Manual Game Ending
-        if snake.dead:
-            snake = Snake(grid)
+            # Updating Screen
+            self.window.update()
 
-        # Updating Score in Title                     
-        wn.title(f'Snake Game Algorithm  -  Score: {snake.drawnLength}')
+            # Showing predicted Path
+            if self.showingPath and self.path:
+                self.show.clear()
+                self.show.pu()
+                self.show.goto(self.path[0])
+                self.show.pd()
+                for node in self.path:
+                    self.show.goto(node)
+            
+            # Pausing and Playing
+            if self.play: continue
 
-        # Runtime Functions
-        # manualGameplay()
+            # Speed loop
+            for _ in range(self.playSpeed):
+                
+                # Frame Counting
+                self.frame += 1
+                self.runFrame += 1
 
-# Ending Program
-wn.mainloop()
+                # Frame Rate Calculator
+                self.currentTime = time.time()
+                if self.currentTime - self.startTime >= 1:
+                    if self.gettingFrameRate:
+                        print(f'FPS: {self.runFrame}')
+                    self.runFrame = 0
+                    self.startTime = time.time()
+                    self.gettingFrameRate = False
+
+                # Algorithms
+
+                # self.path = self.snake.getPathFromAstar()
+                # self.path = self.snake.pathShortcutHamilton()
+                self.path = self.snake.shortcutHamilton()
+
+                # Updating and Showing Snake
+                self.snake.run()
+
+                # Resetting Snake
+                if self.snake.dead:
+                    self.snake = Snake(self.grid)
+                
+                # Updating Score in Title
+                self.window.title(f"Snake Game Algorithm  -  Score: {self.snake.drawnLength}")
+
+                # Manually Playing
+                # self.manualGameplay()
+        
+        # Ending Program
+        self.window.mainloop()
+
+# Main Function
+def main():
+    game = Game()
+    game.run()
+
+# Executing Program
+if __name__ == '__main__':
+    main()
