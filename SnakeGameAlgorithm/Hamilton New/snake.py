@@ -18,7 +18,7 @@ class Snake:
 
         # Environment Variables
         self.grid = grid
-        self.path = grid.hCycle
+        self.cycle = grid.hCycle
         self.cyclePath = None
 
         # A* Variables
@@ -41,10 +41,10 @@ class Snake:
         self.head.shape('scaled-square')
         self.color = '#009600'
         self.head.color(self.color)
-        self.head.width(self.speed - (self.grid.bord*2) + 1)
+        self.head.width(self.speed - (self.grid.bord * 2) + 1)
         self.head.origin = self.grid.center()
         self.head.goto(self.head.origin)
-        self.head.dir = 'up'
+        self.head.dir = 'right'
 
         # Snake Food
         self.food = turtle.Turtle()
@@ -152,7 +152,7 @@ class Snake:
         # Generating new segment
         new_segment = turtle.Turtle()
         new_segment.speed(0)
-        new_segment.width(self.speed - (self.grid.bord*2) + 1)
+        new_segment.width(self.speed - (self.grid.bord * 2) + 1)
         new_segment.ht()
         new_segment.shape('scaled-square')
         new_segment.color(self.color)
@@ -248,30 +248,31 @@ class Snake:
         return path
     
     # Main Movement Function for Shortcut Algorithm
-    def shortcutHamilton(self):
+    def pathShortcutHamilton(self):
         self.cyclePath = self.getPathFromShortcutHamilton()
         self.toward(self.cyclePath[0])
         return self.cyclePath
     
     # Only Calculating One Block Ahead
-    def tempOnlyOneShortcut(self):
-        self.toward(self.getNextMoveFromShortcut(self.head.pos()))
+    def shortcutHamilton(self):
+        node = self.getNextMoveFromShortcut(self.head.pos())
+        self.toward(node); return [node]
 
     def getNextMoveFromShortcut(self, pos, layer = 1, pathSoFar = []):
 
         # Predicting Body Movement with shortcut
         walls = self.getBodyPositions(); x, y = pos
         if len(walls) - layer > 0:
-            for move in range(layer):
+            for _ in range(layer):
                 walls.remove(walls[-1])
         else: walls.clear()
         walls = [pos] + pathSoFar + walls
 
         # Getting Main Distances
-        pathNumber = self.path.index(pos)
-        distanceToFood = self.pathDistance(pathNumber, self.path.index(self.food.pos()))
+        pathNumber = self.cycle.index(pos)
+        distanceToFood = self.pathDistance(pathNumber, self.cycle.index(self.food.pos()))
         if len(self.body) > 0:
-            distanceToTail = self.pathDistance(pathNumber, self.path.index(walls[-1]))
+            distanceToTail = self.pathDistance(pathNumber, self.cycle.index(walls[-1]))
         else: distanceToTail = float('inf')
 
         # Calculating Available Cutting Amounts
@@ -321,7 +322,7 @@ class Snake:
         # Looking for optimal node to travel to
         for node in goList:
             if canGo[node]:
-                dist = self.pathDistance(pathNumber, self.path.index(node))
+                dist = self.pathDistance(pathNumber, self.cycle.index(node))
                 if dist <= cuttingAmountAvailable and dist > bestDist:
                     bestDir = node
                     bestDist = dist
@@ -331,14 +332,11 @@ class Snake:
             return bestDir
         
         # Should not reach here -------------------
+
+        print(random.random())
         
         # Returning viable node
-        if canGoUp:
-            return above
-        elif canGoLeft:
-            return onleft
-        elif canGoDown:
-            return below
-        elif canGoRight:
-            return onright
+        for node in goList:
+            if canGo[node]:
+                return node
         return above
